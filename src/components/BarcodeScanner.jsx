@@ -31,7 +31,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         throw new Error('Tu navegador no soporta acceso a la cámara');
       }
 
-      // Inicializar Quagga con configuración optimizada para códigos españoles
+      // Inicializar Quagga con configuración universal
       await new Promise((resolve, reject) => {
         Quagga.init({
           inputStream: {
@@ -41,8 +41,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
             constraints: {
               width: { min: 640, ideal: 1280, max: 1920 },
               height: { min: 480, ideal: 720, max: 1080 },
-              facingMode: "environment",
-              aspectRatio: { min: 1, max: 2 }
+              facingMode: "environment"
             },
           },
           decoder: {
@@ -54,43 +53,10 @@ const BarcodeScanner = ({ onScan, onClose }) => {
               "upc_reader",
               "upc_e_reader",
               "codabar_reader"
-            ],
-            multiple: false,
-            debug: {
-              showCanvas: true,
-              showPatches: true,
-              showFoundPatches: true,
-              showSkeleton: true,
-              showLabels: true,
-              showPatchLabels: true,
-              showRemainingPatchLabels: true,
-              boxFromPatches: {
-                showTransformed: true,
-                showTransformedBox: true,
-                showBB: true
-              }
-            }
+            ]
           },
           locate: true,
-          frequency: 5,
-          locator: {
-            halfSample: true,
-            patchSize: "medium",
-            debug: {
-              showCanvas: true,
-              showPatches: true,
-              showFoundPatches: true,
-              showSkeleton: true,
-              showLabels: true,
-              showPatchLabels: true,
-              showRemainingPatchLabels: true,
-              boxFromPatches: {
-                showTransformed: true,
-                showTransformedBox: true,
-                showBB: true
-              }
-            }
-          }
+          frequency: 10
         }, (err) => {
           if (err) {
             reject(err);
@@ -109,43 +75,41 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         
         // Validar que el código tenga al menos 8 dígitos
         if (code && code.length >= 8) {
-          // Para códigos EAN españoles, verificar que empiecen con 84
-          if (code.startsWith('84') || code.length >= 8) {
-            onScan(code);
-            stopScanner();
-          } else {
-            setDebugInfo(`Código detectado pero no válido: ${code}`);
-          }
+          // Aceptar cualquier código válido de cualquier país
+          onScan(code);
+          stopScanner();
         }
       });
 
       Quagga.onProcessed((result) => {
         if (result) {
-          const drawingCanvas = Quagga.canvas.dom.image;
-          const context = drawingCanvas.getContext('2d');
-          
-          if (result.boxes) {
-            result.boxes.filter((box) => box !== result.box).forEach((box) => {
-              Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, context, { color: 'green', lineWidth: 2 });
-            });
-          }
-          if (result.box) {
-            Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, context, { color: 'blue', lineWidth: 2 });
-          }
-          if (result.codeResult && result.codeResult.code) {
-            Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, context, { color: 'red', lineWidth: 3 });
+          try {
+            const drawingCanvas = Quagga.canvas.dom.image;
+            if (drawingCanvas) {
+              const context = drawingCanvas.getContext('2d');
+              
+              if (result.boxes) {
+                result.boxes.filter((box) => box !== result.box).forEach((box) => {
+                  Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, context, { color: 'green', lineWidth: 2 });
+                });
+              }
+              if (result.box) {
+                Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, context, { color: 'blue', lineWidth: 2 });
+              }
+              if (result.codeResult && result.codeResult.code) {
+                Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, context, { color: 'red', lineWidth: 3 });
+              }
+            }
+          } catch (err) {
+            console.log('Error en procesamiento visual:', err);
           }
         }
-      });
-
-      Quagga.onStarted(() => {
-        console.log('Escáner iniciado correctamente');
-        setDebugInfo('Escáner activo - Buscando códigos...');
       });
 
       // Iniciar el escáner
       Quagga.start();
       setIsInitializing(false);
+      setDebugInfo('Escáner activo - Buscando códigos...');
       
     } catch (err) {
       console.error('Error al iniciar el escáner:', err);
@@ -317,10 +281,10 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 marginBottom: '1.5rem'
               }}>
                 <h4 style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
-                  💡 Consejos para productos españoles:
+                  💡 Consejos universales:
                 </h4>
                 <ul style={{ color: '#92400e', fontSize: '0.75rem', textAlign: 'left', lineHeight: '1.4' }}>
-                  <li>• Los códigos españoles suelen empezar con "84"</li>
+                  <li>• Compatible con códigos de todo el mundo</li>
                   <li>• Mantén el código estable y bien iluminado</li>
                   <li>• Distancia recomendada: 10-20 cm</li>
                   <li>• Asegúrate de que el código esté completo</li>
