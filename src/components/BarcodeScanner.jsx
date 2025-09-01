@@ -5,93 +5,175 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const scannerRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
+  const [cameraPermission, setCameraPermission] = useState(null);
 
   useEffect(() => {
-    if (isScanning) {
-      startScanner();
-    } else {
-      stopScanner();
-    }
-
-    return () => {
-      stopScanner();
-    };
-  }, [isScanning]);
-
-  const startScanner = () => {
-    setError(null);
+    // Verificar permisos de cámara al montar el componente
+    checkCameraPermission();
     
-    Quagga.init({
-      inputStream: {
-        name: "Live",
-        type: "LiveStream",
-        target: scannerRef.current,
-        constraints: {
-          width: 640,
-          height: 480,
-          facingMode: "environment"
-        },
-      },
-      decoder: {
-        readers: [
-          "ean_reader",
-          "ean_8_reader",
-          "code_128_reader",
-          "code_39_reader",
-          "upc_reader",
-          "upc_e_reader"
-        ]
-      },
-      locate: true
-    }, (err) => {
-      if (err) {
-        console.error('Error al iniciar el escáner:', err);
-        setError('No se pudo acceder a la cámara. Verifica los permisos.');
-        setIsScanning(false);
+    return () => {
+      if (Quagga) {
+        Quagga.stop();
+      }
+    };
+  }, []);
+
+  const checkCameraPermission = async () => {
+    try {
+      // Verificar si el navegador soporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('Tu navegador no soporta acceso a la cámara');
         return;
       }
-      Quagga.start();
-    });
 
-    Quagga.onDetected((result) => {
-      const code = result.codeResult.code;
-      console.log('Código detectado:', code);
-      onScan(code);
-      stopScanner();
-    });
-
-    Quagga.onProcessed((result) => {
-      if (result) {
-        const drawingCanvas = Quagga.canvas.dom.image;
-        const context = drawingCanvas.getContext('2d');
-        if (result.boxes) {
-          result.boxes.filter((box) => box !== result.box).forEach((box) => {
-            Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, context, { color: 'green', lineWidth: 2 });
-          });
-        }
-        if (result.box) {
-          Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, context, { color: 'blue', lineWidth: 2 });
-        }
-        if (result.codeResult && result.codeResult.code) {
-          Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, context, { color: 'red', lineWidth: 3 });
-        }
+      // Solicitar permisos de cámara
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
+      });
+      
+      // Si llegamos aquí, tenemos permisos
+      setCameraPermission('granted');
+      
+      // Detener el stream inmediatamente (solo queríamos verificar permisos)
+      stream.getTracks().forEach(track => track.stop());
+      
+    } catch (err) {
+      console.error('Error al verificar permisos de cámara:', err);
+      if (err.name === 'NotAllowedError') {
+        setError('Permisos de cámara denegados. Por favor, permite el acceso a la cámara.');
+      } else if (err.name === 'NotFoundError') {
+        setError('No se encontró ninguna cámara en tu dispositivo.');
+      } else {
+        setError('Error al acceder a la cámara: ' + err.message);
       }
-    });
+      setCameraPermission('denied');
+    }
+  };
+
+  const startScanner = async () => {
+    if (cameraPermission !== 'granted') {
+      await checkCameraPermission();
+      if (cameraPermission !== 'granted') {
+        return;
+      }
+    }
+
+    setError(null);
+    
+    try {
+      await Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: scannerRef.current,
+          constraints: {
+            width: { min: 640, ideal: 640, max: 640 },
+            height: { min: 480, ideal: 480, max: 480 },
+            facingMode: "environment",
+            aspectRatio: { min: 1, max: 2 }
+          },
+        },
+        decoder: {
+          readers: [
+            "ean_reader",
+            "ean_8_reader",
+            "code_128_reader",
+            "code_39_reader",
+            "upc_reader",
+            "upc_e_reader"
+          ],
+          multiple: false,
+          debug: {
+            showCanvas: true,
+            showPatches: true,
+            showFoundPatches: true,
+            showSkeleton: true,
+            showLabels: true,
+            showPatchLabels: true,
+            showRemainingPatchLabels: true,
+            boxFromPatches: {
+              showTransformed: true,
+              showTransformedBox: true,
+              showBB: true
+            }
+          }
+        },
+        locate: true,
+        frequency: 10
+      });
+
+      Quagga.start();
+      
+      // Configurar eventos
+      Quagga.onDetected((result) => {
+        const code = result.codeResult.code;
+        console.log('Código detectado:', code);
+        
+        // Validar que el código tenga al menos 8 dígitos
+        if (code && code.length >= 8) {
+          onScan(code);
+          stopScanner();
+        }
+      });
+
+      Quagga.onProcessed((result) => {
+        if (result) {
+          const drawingCanvas = Quagga.canvas.dom.image;
+          const context = drawingCanvas.getContext('2d');
+          
+          if (result.boxes) {
+            result.boxes.filter((box) => box !== result.box).forEach((box) => {
+              Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, context, { color: 'green', lineWidth: 2 });
+            });
+          }
+          if (result.box) {
+            Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, context, { color: 'blue', lineWidth: 2 });
+          }
+          if (result.codeResult && result.codeResult.code) {
+            Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, context, { color: 'red', lineWidth: 3 });
+          }
+        }
+      });
+
+      Quagga.onStarted(() => {
+        console.log('Escáner iniciado correctamente');
+      });
+
+    } catch (err) {
+      console.error('Error al iniciar el escáner:', err);
+      setError('Error al iniciar el escáner: ' + err.message);
+      setIsScanning(false);
+    }
   };
 
   const stopScanner = () => {
-    if (Quagga) {
-      Quagga.stop();
+    try {
+      if (Quagga) {
+        Quagga.stop();
+      }
+    } catch (err) {
+      console.error('Error al detener el escáner:', err);
     }
   };
 
   const handleStartScan = () => {
     setIsScanning(true);
+    startScanner();
   };
 
   const handleStopScan = () => {
     setIsScanning(false);
+    stopScanner();
     onClose();
+  };
+
+  const handleRetryPermission = async () => {
+    setError(null);
+    await checkCameraPermission();
   };
 
   return (
@@ -118,12 +200,19 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         
         {error && (
           <div className="error-card" style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
               <div className="error-icon">
                 <span style={{ color: '#dc2626', fontSize: '1.25rem' }}>⚠️</span>
               </div>
               <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
             </div>
+            <button
+              onClick={handleRetryPermission}
+              className="btn-primary"
+              style={{ width: '100%', fontSize: '0.875rem', padding: '0.75rem' }}
+            >
+              Reintentar
+            </button>
           </div>
         )}
         
@@ -151,8 +240,9 @@ const BarcodeScanner = ({ onScan, onClose }) => {
               onClick={handleStartScan}
               className="btn-primary"
               style={{ width: '100%' }}
+              disabled={cameraPermission === 'denied'}
             >
-              Iniciar escáner
+              {cameraPermission === 'denied' ? 'Cámara no disponible' : 'Iniciar escáner'}
             </button>
           </div>
         ) : (
@@ -168,7 +258,8 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px dashed #d1d5db'
+                border: '2px dashed #d1d5db',
+                overflow: 'hidden'
               }}
             >
               <div style={{ textAlign: 'center' }}>
@@ -197,6 +288,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 <li>• Mantén el código estable y bien iluminado</li>
                 <li>• Distancia recomendada: 10-20 cm</li>
                 <li>• El escáner se activará automáticamente</li>
+                <li>• Asegúrate de que el código esté completo</li>
               </ul>
             </div>
             <button
