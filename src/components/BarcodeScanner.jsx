@@ -5,110 +5,64 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const scannerRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
-  const [cameraPermission, setCameraPermission] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   useEffect(() => {
-    // Verificar permisos de cámara al montar el componente
-    checkCameraPermission();
-    
     return () => {
       if (Quagga) {
-        Quagga.stop();
+        try {
+          Quagga.stop();
+        } catch (err) {
+          console.log('Error al limpiar escáner:', err);
+        }
       }
     };
   }, []);
 
-  const checkCameraPermission = async () => {
-    try {
-      // Verificar si el navegador soporta getUserMedia
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setError('Tu navegador no soporta acceso a la cámara');
-        return;
-      }
-
-      // Solicitar permisos de cámara
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        } 
-      });
-      
-      // Si llegamos aquí, tenemos permisos
-      setCameraPermission('granted');
-      
-      // Detener el stream inmediatamente (solo queríamos verificar permisos)
-      stream.getTracks().forEach(track => track.stop());
-      
-    } catch (err) {
-      console.error('Error al verificar permisos de cámara:', err);
-      if (err.name === 'NotAllowedError') {
-        setError('Permisos de cámara denegados. Por favor, permite el acceso a la cámara.');
-      } else if (err.name === 'NotFoundError') {
-        setError('No se encontró ninguna cámara en tu dispositivo.');
-      } else {
-        setError('Error al acceder a la cámara: ' + err.message);
-      }
-      setCameraPermission('denied');
-    }
-  };
-
   const startScanner = async () => {
-    if (cameraPermission !== 'granted') {
-      await checkCameraPermission();
-      if (cameraPermission !== 'granted') {
-        return;
-      }
-    }
-
+    setIsInitializing(true);
     setError(null);
     
     try {
-      await Quagga.init({
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: scannerRef.current,
-          constraints: {
-            width: { min: 640, ideal: 640, max: 640 },
-            height: { min: 480, ideal: 480, max: 480 },
-            facingMode: "environment",
-            aspectRatio: { min: 1, max: 2 }
+      // Verificar si el navegador soporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Tu navegador no soporta acceso a la cámara');
+      }
+
+      // Inicializar Quagga directamente
+      await new Promise((resolve, reject) => {
+        Quagga.init({
+          inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: scannerRef.current,
+            constraints: {
+              width: { min: 640, ideal: 640, max: 640 },
+              height: { min: 480, ideal: 480, max: 480 },
+              facingMode: "environment"
+            },
           },
-        },
-        decoder: {
-          readers: [
-            "ean_reader",
-            "ean_8_reader",
-            "code_128_reader",
-            "code_39_reader",
-            "upc_reader",
-            "upc_e_reader"
-          ],
-          multiple: false,
-          debug: {
-            showCanvas: true,
-            showPatches: true,
-            showFoundPatches: true,
-            showSkeleton: true,
-            showLabels: true,
-            showPatchLabels: true,
-            showRemainingPatchLabels: true,
-            boxFromPatches: {
-              showTransformed: true,
-              showTransformedBox: true,
-              showBB: true
-            }
+          decoder: {
+            readers: [
+              "ean_reader",
+              "ean_8_reader",
+              "code_128_reader",
+              "code_39_reader",
+              "upc_reader",
+              "upc_e_reader"
+            ]
+          },
+          locate: true
+        }, (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
           }
-        },
-        locate: true,
-        frequency: 10
+        });
       });
 
-      Quagga.start();
-      
-      // Configurar eventos
+      // Configurar eventos después de inicializar
       Quagga.onDetected((result) => {
         const code = result.codeResult.code;
         console.log('Código detectado:', code);
@@ -139,14 +93,23 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         }
       });
 
-      Quagga.onStarted(() => {
-        console.log('Escáner iniciado correctamente');
-      });
-
+      // Iniciar el escáner
+      Quagga.start();
+      setIsInitializing(false);
+      
     } catch (err) {
       console.error('Error al iniciar el escáner:', err);
-      setError('Error al iniciar el escáner: ' + err.message);
-      setIsScanning(false);
+      setIsInitializing(false);
+      
+      if (err.name === 'NotAllowedError') {
+        setError('Permisos de cámara denegados. Por favor, permite el acceso a la cámara y vuelve a intentar.');
+      } else if (err.name === 'NotFoundError') {
+        setError('No se encontró ninguna cámara en tu dispositivo.');
+      } else if (err.name === 'NotSupportedError') {
+        setError('Tu navegador no soporta esta funcionalidad. Prueba con Chrome o Firefox.');
+      } else {
+        setError('Error al acceder a la cámara: ' + err.message);
+      }
     }
   };
 
@@ -156,7 +119,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         Quagga.stop();
       }
     } catch (err) {
-      console.error('Error al detener el escáner:', err);
+      console.log('Error al detener el escáner:', err);
     }
   };
 
@@ -171,9 +134,9 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     onClose();
   };
 
-  const handleRetryPermission = async () => {
+  const handleRetry = () => {
     setError(null);
-    await checkCameraPermission();
+    handleStartScan();
   };
 
   return (
@@ -207,7 +170,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
               <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
             </div>
             <button
-              onClick={handleRetryPermission}
+              onClick={handleRetry}
               className="btn-primary"
               style={{ width: '100%', fontSize: '0.875rem', padding: '0.75rem' }}
             >
@@ -234,15 +197,14 @@ const BarcodeScanner = ({ onScan, onClose }) => {
               Escanea un código de barras
             </h4>
             <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              Usa tu cámara para escanear automáticamente
+              Haz clic para activar la cámara y escanear automáticamente
             </p>
             <button
               onClick={handleStartScan}
               className="btn-primary"
               style={{ width: '100%' }}
-              disabled={cameraPermission === 'denied'}
             >
-              {cameraPermission === 'denied' ? 'Cámara no disponible' : 'Iniciar escáner'}
+              Iniciar escáner
             </button>
           </div>
         ) : (
@@ -259,38 +221,47 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '2px dashed #d1d5db',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                position: 'relative'
               }}
             >
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  border: '2px solid #fef3c7',
-                  borderTop: '2px solid #d97706',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                  margin: '0 auto 0.5rem'
-                }}></div>
-                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Activando cámara...</p>
+              {isInitializing && (
+                <div style={{ textAlign: 'center', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    border: '2px solid #fef3c7',
+                    borderTop: '2px solid #d97706',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    margin: '0 auto 0.5rem'
+                  }}></div>
+                  <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                    {error ? 'Error al iniciar cámara' : 'Activando cámara...'}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {!error && (
+              <div style={{
+                background: '#fef3c7',
+                borderRadius: '16px',
+                padding: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                <h4 style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
+                  💡 Consejos:
+                </h4>
+                <ul style={{ color: '#92400e', fontSize: '0.75rem', textAlign: 'left', lineHeight: '1.4' }}>
+                  <li>• Mantén el código estable y bien iluminado</li>
+                  <li>• Distancia recomendada: 10-20 cm</li>
+                  <li>• El escáner se activará automáticamente</li>
+                  <li>• Asegúrate de que el código esté completo</li>
+                </ul>
               </div>
-            </div>
-            <div style={{
-              background: '#fef3c7',
-              borderRadius: '16px',
-              padding: '1rem',
-              marginBottom: '1.5rem'
-            }}>
-              <h4 style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
-                💡 Consejos:
-              </h4>
-              <ul style={{ color: '#92400e', fontSize: '0.75rem', textAlign: 'left', lineHeight: '1.4' }}>
-                <li>• Mantén el código estable y bien iluminado</li>
-                <li>• Distancia recomendada: 10-20 cm</li>
-                <li>• El escáner se activará automáticamente</li>
-                <li>• Asegúrate de que el código esté completo</li>
-              </ul>
-            </div>
+            )}
+            
             <button
               onClick={handleStopScan}
               className="btn-secondary"
