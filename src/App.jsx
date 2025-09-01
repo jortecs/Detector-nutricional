@@ -65,88 +65,184 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            🥗 Detector Nutricional
-          </h1>
-          <p className="text-gray-600">
-            Escanea códigos de barras para obtener información nutricional detallada
-          </p>
-        </div>
-
-        {/* Formulario de búsqueda */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <form onSubmit={handleManualSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="ean" className="block text-sm font-medium text-gray-700 mb-2">
-                Código de Barras (EAN)
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  id="ean"
-                  value={ean}
-                  onChange={(e) => setEan(e.target.value)}
-                  placeholder="Ej: 3017620422003"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Buscando...' : 'Buscar'}
-                </button>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {/* Header con diseño mejorado */}
+      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 shadow-lg">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="flex justify-center items-center mb-4">
+              <div className="bg-white rounded-full p-4 shadow-lg mr-4">
+                <span className="text-4xl">🥗</span>
+              </div>
+              <div>
+                <h1 className="text-5xl font-bold text-white mb-2">
+                  NutriScan
+                </h1>
+                <p className="text-green-100 text-lg">
+                  Tu compañero inteligente para una alimentación saludable
+                </p>
               </div>
             </div>
-            
-            <div className="text-center">
-              <span className="text-gray-500">o</span>
-            </div>
-            
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setShowScanner(true)}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-              >
-                📷 Escanear con Cámara
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Resultados */}
-        <ProductResults 
-          product={product}
-          analysis={analysis}
-          loading={loading}
-          error={error}
-        />
-
-        {/* Información adicional */}
-        {!product && !loading && !error && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
-            <h3 className="text-lg font-semibold text-blue-800 mb-2">
-              💡 Cómo usar la aplicación
-            </h3>
-            <ul className="text-blue-700 space-y-1">
-              <li>• Introduce manualmente el código de barras del producto</li>
-              <li>• O usa la cámara para escanear el código automáticamente</li>
-              <li>• Obtén información nutricional detallada y análisis personalizado</li>
-              <li>• Revisa el Nutri-Score y Eco-Score del producto</li>
-            </ul>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Estado de la aplicación */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
-          <p className="text-green-800">
-            ✅ Aplicación funcionando correctamente
-          </p>
+      <div className="container mx-auto px-4 py-8">
+        {/* Tarjeta principal con diseño atractivo */}
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-green-100">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                Descubre el poder de la nutrición
+              </h2>
+              <p className="text-gray-600 text-lg">
+                Escanea cualquier producto y obtén información nutricional detallada
+              </p>
+            </div>
+
+            {/* Formulario mejorado */}
+            <form onSubmit={handleManualSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="ean" className="block text-sm font-semibold text-gray-700 mb-3">
+                  <span className="text-green-600 mr-2">📊</span>
+                  Código de Barras (EAN)
+                </label>
+                <div className="flex space-x-3">
+                  <input
+                    type="text"
+                    id="ean"
+                    value={ean}
+                    onChange={(e) => setEan(e.target.value)}
+                    placeholder="Ej: 3017620422003"
+                    className="flex-1 px-6 py-4 border-2 border-green-200 rounded-xl focus:ring-4 focus:ring-green-200 focus:border-green-500 text-lg transition-all duration-200"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Analizando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="mr-2">🔍</span>
+                        Buscar
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center">
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                  <span className="px-4 text-gray-500 font-medium">o</span>
+                  <div className="flex-1 h-px bg-gray-300"></div>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:from-blue-600 hover:to-cyan-600 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center mx-auto"
+                >
+                  <span className="mr-2">📷</span>
+                  Escanear con Cámara
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Resultados */}
+          <ProductResults 
+            product={product}
+            analysis={analysis}
+            loading={loading}
+            error={error}
+          />
+
+          {/* Información adicional con diseño mejorado */}
+          {!product && !loading && !error && (
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-8 mt-8">
+              <div className="text-center">
+                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">💡</span>
+                </div>
+                <h3 className="text-2xl font-bold text-blue-800 mb-4">
+                  ¿Cómo funciona NutriScan?
+                </h3>
+                <div className="grid md:grid-cols-2 gap-6 text-left">
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <div className="bg-green-100 rounded-full p-2 mr-3 mt-1">
+                        <span className="text-green-600">📱</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">Escaneo Inteligente</h4>
+                        <p className="text-gray-600">Usa tu cámara para escanear códigos de barras automáticamente</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="bg-blue-100 rounded-full p-2 mr-3 mt-1">
+                        <span className="text-blue-600">🔍</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">Búsqueda Manual</h4>
+                        <p className="text-gray-600">Introduce códigos EAN manualmente para obtener información</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <div className="bg-purple-100 rounded-full p-2 mr-3 mt-1">
+                        <span className="text-purple-600">📊</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">Análisis Detallado</h4>
+                        <p className="text-gray-600">Obtén nutrientes, Nutri-Score y Eco-Score del producto</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="bg-orange-100 rounded-full p-2 mr-3 mt-1">
+                        <span className="text-orange-600">🤖</span>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">IA Nutricional</h4>
+                        <p className="text-gray-600">Recibe consejos personalizados de un nutricionista virtual</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer con información adicional */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mt-8 border border-green-100">
+            <div className="text-center">
+              <div className="flex justify-center space-x-6 mb-4">
+                <div className="flex items-center text-green-600">
+                  <span className="text-2xl mr-2">🌱</span>
+                  <span className="font-semibold">Saludable</span>
+                </div>
+                <div className="flex items-center text-blue-600">
+                  <span className="text-2xl mr-2">⚡</span>
+                  <span className="font-semibold">Rápido</span>
+                </div>
+                <div className="flex items-center text-purple-600">
+                  <span className="text-2xl mr-2">🔒</span>
+                  <span className="font-semibold">Seguro</span>
+                </div>
+              </div>
+              <p className="text-gray-600">
+                NutriScan te ayuda a tomar decisiones alimentarias más informadas y saludables
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
