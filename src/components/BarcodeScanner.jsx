@@ -6,7 +6,6 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
   const [isInitializing, setIsInitializing] = useState(false);
-  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
     return () => {
@@ -23,15 +22,9 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const startScanner = async () => {
     setIsInitializing(true);
     setError(null);
-    setDebugInfo('');
     
     try {
-      // Verificar si el navegador soporta getUserMedia
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Tu navegador no soporta acceso a la cámara');
-      }
-
-      // Inicializar Quagga con configuración universal
+      // Configuración mínima y robusta
       await new Promise((resolve, reject) => {
         Quagga.init({
           inputStream: {
@@ -39,24 +32,14 @@ const BarcodeScanner = ({ onScan, onClose }) => {
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 },
+              width: 640,
+              height: 480,
               facingMode: "environment"
             },
           },
           decoder: {
-            readers: [
-              "ean_reader",
-              "ean_8_reader", 
-              "code_128_reader",
-              "code_39_reader",
-              "upc_reader",
-              "upc_e_reader",
-              "codabar_reader"
-            ]
-          },
-          locate: true,
-          frequency: 10
+            readers: ["ean_reader", "ean_8_reader", "upc_reader"]
+          }
         }, (err) => {
           if (err) {
             reject(err);
@@ -66,63 +49,30 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         });
       });
 
-      // Configurar eventos después de inicializar
+      // Eventos simples
       Quagga.onDetected((result) => {
         const code = result.codeResult.code;
-        const format = result.codeResult.format;
-        console.log('Código detectado:', code, 'Formato:', format);
-        setDebugInfo(`Detectado: ${code} (${format})`);
+        console.log('Código detectado:', code);
         
-        // Validar que el código tenga al menos 8 dígitos
         if (code && code.length >= 8) {
-          // Aceptar cualquier código válido de cualquier país
           onScan(code);
           stopScanner();
         }
       });
 
-      Quagga.onProcessed((result) => {
-        if (result) {
-          try {
-            const drawingCanvas = Quagga.canvas.dom.image;
-            if (drawingCanvas) {
-              const context = drawingCanvas.getContext('2d');
-              
-              if (result.boxes) {
-                result.boxes.filter((box) => box !== result.box).forEach((box) => {
-                  Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, context, { color: 'green', lineWidth: 2 });
-                });
-              }
-              if (result.box) {
-                Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, context, { color: 'blue', lineWidth: 2 });
-              }
-              if (result.codeResult && result.codeResult.code) {
-                Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, context, { color: 'red', lineWidth: 3 });
-              }
-            }
-          } catch (err) {
-            console.log('Error en procesamiento visual:', err);
-          }
-        }
-      });
-
-      // Iniciar el escáner
       Quagga.start();
       setIsInitializing(false);
-      setDebugInfo('Escáner activo - Buscando códigos...');
       
     } catch (err) {
       console.error('Error al iniciar el escáner:', err);
       setIsInitializing(false);
       
       if (err.name === 'NotAllowedError') {
-        setError('Permisos de cámara denegados. Por favor, permite el acceso a la cámara y vuelve a intentar.');
+        setError('Permisos de cámara denegados. Permite el acceso a la cámara.');
       } else if (err.name === 'NotFoundError') {
         setError('No se encontró ninguna cámara en tu dispositivo.');
-      } else if (err.name === 'NotSupportedError') {
-        setError('Tu navegador no soporta esta funcionalidad. Prueba con Chrome o Firefox.');
       } else {
-        setError('Error al acceder a la cámara: ' + err.message);
+        setError('Error al acceder a la cámara. Intenta de nuevo.');
       }
     }
   };
@@ -150,7 +100,6 @@ const BarcodeScanner = ({ onScan, onClose }) => {
 
   const handleRetry = () => {
     setError(null);
-    setDebugInfo('');
     handleStartScan();
   };
 
@@ -212,7 +161,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
               Escanea un código de barras
             </h4>
             <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              Haz clic para activar la cámara y escanear automáticamente
+              Haz clic para activar la cámara
             </p>
             <button
               onClick={handleStartScan}
@@ -252,46 +201,27 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                     margin: '0 auto 0.5rem'
                   }}></div>
                   <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                    {error ? 'Error al iniciar cámara' : 'Activando cámara...'}
+                    Activando cámara...
                   </p>
                 </div>
               )}
             </div>
             
-            {/* Información de debug */}
-            {debugInfo && (
-              <div style={{
-                background: '#dbeafe',
-                border: '1px solid #93c5fd',
-                borderRadius: '8px',
-                padding: '0.5rem',
-                marginBottom: '1rem',
-                fontSize: '0.75rem',
-                color: '#1e40af'
-              }}>
-                {debugInfo}
-              </div>
-            )}
-            
-            {!error && (
-              <div style={{
-                background: '#fef3c7',
-                borderRadius: '16px',
-                padding: '1rem',
-                marginBottom: '1.5rem'
-              }}>
-                <h4 style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
-                  💡 Consejos universales:
-                </h4>
-                <ul style={{ color: '#92400e', fontSize: '0.75rem', textAlign: 'left', lineHeight: '1.4' }}>
-                  <li>• Compatible con códigos de todo el mundo</li>
-                  <li>• Mantén el código estable y bien iluminado</li>
-                  <li>• Distancia recomendada: 10-20 cm</li>
-                  <li>• Asegúrate de que el código esté completo</li>
-                  <li>• Mueve lentamente si no detecta</li>
-                </ul>
-              </div>
-            )}
+            <div style={{
+              background: '#fef3c7',
+              borderRadius: '16px',
+              padding: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <h4 style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
+                💡 Consejos:
+              </h4>
+              <ul style={{ color: '#92400e', fontSize: '0.75rem', textAlign: 'left', lineHeight: '1.4' }}>
+                <li>• Mantén el código estable y bien iluminado</li>
+                <li>• Distancia: 10-20 cm</li>
+                <li>• Asegúrate de que el código esté completo</li>
+              </ul>
+            </div>
             
             <button
               onClick={handleStopScan}

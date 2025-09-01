@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import BarcodeScanner from './components/BarcodeScanner';
+import FoodImageScanner from './components/FoodImageScanner';
 import ProductResults from './components/ProductResults';
 import { getProductInfo } from './services/openFoodFactsService';
 import { getNutritionalAnalysis } from './services/openAIService';
@@ -11,7 +12,8 @@ function App() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showScanner, setShowScanner] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showImageScanner, setShowImageScanner] = useState(false);
 
   const handleSearch = async (searchEan) => {
     if (!searchEan.trim()) {
@@ -56,8 +58,36 @@ function App() {
 
   const handleScan = (scannedEan) => {
     setEan(scannedEan);
-    setShowScanner(false);
+    setShowBarcodeScanner(false);
     handleSearch(scannedEan);
+  };
+
+  const handleFoodDetected = (foodData) => {
+    setShowImageScanner(false);
+    
+    // Crear un objeto de producto compatible con el formato existente
+    const foodProduct = {
+      name: foodData.name,
+      brands: "Detectado por IA",
+      quantity: foodData.estimatedWeight ? `${foodData.estimatedWeight}g` : "No especificado",
+      image: null, // No tenemos imagen del producto
+      nutriments: {
+        "energy-kcal_100g": foodData.estimatedCalories,
+        "proteins_100g": foodData.nutritionalInfo.proteins,
+        "carbohydrates_100g": foodData.nutritionalInfo.carbs,
+        "fat_100g": foodData.nutritionalInfo.fats,
+        "fiber_100g": foodData.nutritionalInfo.fiber,
+        "sugars_100g": foodData.nutritionalInfo.sugar
+      },
+      ingredients: foodData.description,
+      type: foodData.type,
+      healthBenefits: foodData.healthBenefits,
+      healthRisks: foodData.healthRisks,
+      recommendations: foodData.recommendations
+    };
+
+    setProduct(foodProduct);
+    setAnalysis(foodData.description);
   };
 
   const handleManualSubmit = (e) => {
@@ -112,13 +142,22 @@ function App() {
 
         {/* Botones principales */}
         <div style={{ marginBottom: '2rem' }}>
-          <button
-            onClick={() => setShowScanner(true)}
-            className="btn-primary"
-            style={{ width: '100%', marginBottom: '1rem' }}
-          >
-            📷 Escanear código de barras
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+            <button
+              onClick={() => setShowBarcodeScanner(true)}
+              className="btn-primary"
+              style={{ flex: 1 }}
+            >
+              📷 Código de barras
+            </button>
+            <button
+              onClick={() => setShowImageScanner(true)}
+              className="btn-primary"
+              style={{ flex: 1 }}
+            >
+              🍎 Reconocer alimento
+            </button>
+          </div>
           
           <div className="separator">
             <span>o</span>
@@ -150,13 +189,13 @@ function App() {
           <div className="instruction-item">
             <div className="instruction-number">1</div>
             <div className="instruction-text">
-              Haz clic en <strong>Escanear código de barras</strong> para usar la cámara o introduce el código manualmente.
+              Escanea un <strong>código de barras</strong> o toma una foto del <strong>alimento</strong>.
             </div>
           </div>
           <div className="instruction-item">
             <div className="instruction-number">2</div>
             <div className="instruction-text">
-              La app obtendrá información nutricional detallada usando <strong>OpenFoodFacts</strong> (servicio gratuito).
+              La app obtendrá información nutricional usando <strong>OpenFoodFacts</strong> o <strong>IA</strong>.
             </div>
           </div>
           <div className="instruction-item">
@@ -176,11 +215,19 @@ function App() {
         />
       </div>
 
-      {/* Modal del escáner */}
-      {showScanner && (
+      {/* Modal del escáner de códigos */}
+      {showBarcodeScanner && (
         <BarcodeScanner 
           onScan={handleScan}
-          onClose={() => setShowScanner(false)}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
+
+      {/* Modal del reconocimiento de imágenes */}
+      {showImageScanner && (
+        <FoodImageScanner 
+          onFoodDetected={handleFoodDetected}
+          onClose={() => setShowImageScanner(false)}
         />
       )}
     </div>

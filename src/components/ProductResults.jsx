@@ -102,6 +102,15 @@ const ProductResults = ({ product, analysis, loading, error }) => {
             </span>
           </div>
 
+          {product.type && (
+            <div className="nutrient-item">
+              <span className="nutrient-label">Tipo:</span>
+              <span style={{ color: '#111827', fontSize: '0.875rem', fontWeight: '500' }}>
+                {product.type}
+              </span>
+            </div>
+          )}
+
           {/* Scores */}
           <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
             {product.nutriScore && (
@@ -161,8 +170,8 @@ const ProductResults = ({ product, analysis, loading, error }) => {
           <div>
             {Object.entries(product.nutriments)
               .filter(([key, value]) => 
-                ['energy-kcal_100g', 'fat_100g', 'carbohydrates_100g', 'proteins_100g', 'salt_100g', 'sugars_100g']
-                .includes(key) && value !== undefined
+                ['energy-kcal_100g', 'fat_100g', 'carbohydrates_100g', 'proteins_100g', 'salt_100g', 'sugars_100g', 'fiber_100g']
+                .includes(key) && value !== undefined && value !== "No especificado"
               )
               .map(([key, value]) => (
                 <div key={key} className="nutrient-item">
@@ -178,7 +187,7 @@ const ProductResults = ({ product, analysis, loading, error }) => {
         {/* Ingredientes */}
         <div>
           <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.75rem' }}>
-            Ingredientes:
+            Descripción:
           </h4>
           <div style={{
             background: 'white',
@@ -192,6 +201,69 @@ const ProductResults = ({ product, analysis, loading, error }) => {
           </div>
         </div>
       </div>
+
+      {/* Beneficios y riesgos para alimentos detectados por IA */}
+      {product.healthBenefits && product.healthRisks && (
+        <div className="result-card">
+          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>
+            Análisis de Salud
+          </h3>
+          
+          <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 1fr' }}>
+            {/* Beneficios */}
+            <div style={{
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: '12px',
+              padding: '1rem'
+            }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#166534', marginBottom: '0.5rem' }}>
+                ✅ Beneficios:
+              </h4>
+              <ul style={{ color: '#166534', fontSize: '0.75rem', lineHeight: '1.4' }}>
+                {product.healthBenefits.map((benefit, index) => (
+                  <li key={index} style={{ marginBottom: '0.25rem' }}>• {benefit}</li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Riesgos */}
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '12px',
+              padding: '1rem'
+            }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#dc2626', marginBottom: '0.5rem' }}>
+                ⚠️ Consideraciones:
+              </h4>
+              <ul style={{ color: '#dc2626', fontSize: '0.75rem', lineHeight: '1.4' }}>
+                {product.healthRisks.map((risk, index) => (
+                  <li key={index} style={{ marginBottom: '0.25rem' }}>• {risk}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Recomendaciones */}
+          {product.recommendations && (
+            <div style={{
+              background: '#fef3c7',
+              border: '1px solid #fde68a',
+              borderRadius: '12px',
+              padding: '1rem',
+              marginTop: '1rem'
+            }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: '#92400e', marginBottom: '0.5rem' }}>
+                💡 Recomendaciones:
+              </h4>
+              <p style={{ color: '#92400e', fontSize: '0.75rem', lineHeight: '1.4' }}>
+                {product.recommendations}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Análisis de IA */}
       {analysis && (
