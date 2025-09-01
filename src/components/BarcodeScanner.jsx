@@ -95,59 +95,105 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-800">Escanear código</h3>
+    <div className="scanner-modal">
+      <div className="scanner-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#111827' }}>
+            Escanear código
+          </h3>
           <button
             onClick={handleStopScan}
-            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: '#9ca3af',
+              cursor: 'pointer'
+            }}
           >
             ✕
           </button>
         </div>
         
         {error && (
-          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6">
-            <div className="flex items-center">
-              <span className="text-red-500 text-lg mr-3">⚠️</span>
-              <p className="text-red-700 text-sm">{error}</p>
+          <div className="error-card" style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div className="error-icon">
+                <span style={{ color: '#dc2626', fontSize: '1.25rem' }}>⚠️</span>
+              </div>
+              <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>
             </div>
           </div>
         )}
         
         {!isScanning ? (
-          <div className="text-center">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-amber-600 text-2xl">📷</span>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              background: '#fef3c7',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.5rem'
+            }}>
+              <span style={{ color: '#d97706', fontSize: '1.5rem' }}>📷</span>
             </div>
-            <h4 className="text-lg font-semibold text-gray-800 mb-4">
+            <h4 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>
               Escanea un código de barras
             </h4>
-            <p className="text-gray-600 text-sm mb-6">
+            <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
               Usa tu cámara para escanear automáticamente
             </p>
             <button
               onClick={handleStartScan}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white py-4 px-6 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              className="btn-primary"
+              style={{ width: '100%' }}
             >
               Iniciar escáner
             </button>
           </div>
         ) : (
-          <div className="text-center">
+          <div style={{ textAlign: 'center' }}>
             <div 
               ref={scannerRef}
-              className="w-full h-48 bg-gray-100 rounded-2xl mb-6 flex items-center justify-center border-2 border-dashed border-gray-300"
+              style={{
+                width: '100%',
+                height: '192px',
+                background: '#f3f4f6',
+                borderRadius: '16px',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px dashed #d1d5db'
+              }}
             >
-              <div className="text-center">
-                <div className="w-8 h-8 border-2 border-amber-200 border-t-amber-500 rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-gray-500 text-sm">Activando cámara...</p>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  border: '2px solid #fef3c7',
+                  borderTop: '2px solid #d97706',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 0.5rem'
+                }}></div>
+                <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Activando cámara...</p>
               </div>
             </div>
-            <div className="bg-amber-50 rounded-2xl p-4 mb-6">
-              <h4 className="font-semibold text-amber-800 mb-3 text-sm">💡 Consejos:</h4>
-              <ul className="text-amber-700 text-xs space-y-1 text-left">
+            <div style={{
+              background: '#fef3c7',
+              borderRadius: '16px',
+              padding: '1rem',
+              marginBottom: '1.5rem'
+            }}>
+              <h4 style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
+                💡 Consejos:
+              </h4>
+              <ul style={{ color: '#92400e', fontSize: '0.75rem', textAlign: 'left', lineHeight: '1.4' }}>
                 <li>• Mantén el código estable y bien iluminado</li>
                 <li>• Distancia recomendada: 10-20 cm</li>
                 <li>• El escáner se activará automáticamente</li>
@@ -155,7 +201,8 @@ const BarcodeScanner = ({ onScan, onClose }) => {
             </div>
             <button
               onClick={handleStopScan}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-2xl font-semibold transition-all duration-200"
+              className="btn-secondary"
+              style={{ width: '100%' }}
             >
               Cancelar
             </button>
