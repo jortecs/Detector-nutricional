@@ -6,6 +6,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
     return () => {
@@ -22,6 +23,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const startScanner = async () => {
     setIsInitializing(true);
     setError(null);
+    setDebugInfo('');
     
     try {
       // Verificar si el navegador soporta getUserMedia
@@ -29,7 +31,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         throw new Error('Tu navegador no soporta acceso a la cámara');
       }
 
-      // Inicializar Quagga directamente
+      // Inicializar Quagga con configuración optimizada para códigos españoles
       await new Promise((resolve, reject) => {
         Quagga.init({
           inputStream: {
@@ -37,22 +39,58 @@ const BarcodeScanner = ({ onScan, onClose }) => {
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { min: 640, ideal: 640, max: 640 },
-              height: { min: 480, ideal: 480, max: 480 },
-              facingMode: "environment"
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 },
+              facingMode: "environment",
+              aspectRatio: { min: 1, max: 2 }
             },
           },
           decoder: {
             readers: [
               "ean_reader",
-              "ean_8_reader",
+              "ean_8_reader", 
               "code_128_reader",
               "code_39_reader",
               "upc_reader",
-              "upc_e_reader"
-            ]
+              "upc_e_reader",
+              "codabar_reader"
+            ],
+            multiple: false,
+            debug: {
+              showCanvas: true,
+              showPatches: true,
+              showFoundPatches: true,
+              showSkeleton: true,
+              showLabels: true,
+              showPatchLabels: true,
+              showRemainingPatchLabels: true,
+              boxFromPatches: {
+                showTransformed: true,
+                showTransformedBox: true,
+                showBB: true
+              }
+            }
           },
-          locate: true
+          locate: true,
+          frequency: 5,
+          locator: {
+            halfSample: true,
+            patchSize: "medium",
+            debug: {
+              showCanvas: true,
+              showPatches: true,
+              showFoundPatches: true,
+              showSkeleton: true,
+              showLabels: true,
+              showPatchLabels: true,
+              showRemainingPatchLabels: true,
+              boxFromPatches: {
+                showTransformed: true,
+                showTransformedBox: true,
+                showBB: true
+              }
+            }
+          }
         }, (err) => {
           if (err) {
             reject(err);
@@ -65,12 +103,19 @@ const BarcodeScanner = ({ onScan, onClose }) => {
       // Configurar eventos después de inicializar
       Quagga.onDetected((result) => {
         const code = result.codeResult.code;
-        console.log('Código detectado:', code);
+        const format = result.codeResult.format;
+        console.log('Código detectado:', code, 'Formato:', format);
+        setDebugInfo(`Detectado: ${code} (${format})`);
         
         // Validar que el código tenga al menos 8 dígitos
         if (code && code.length >= 8) {
-          onScan(code);
-          stopScanner();
+          // Para códigos EAN españoles, verificar que empiecen con 84
+          if (code.startsWith('84') || code.length >= 8) {
+            onScan(code);
+            stopScanner();
+          } else {
+            setDebugInfo(`Código detectado pero no válido: ${code}`);
+          }
         }
       });
 
@@ -91,6 +136,11 @@ const BarcodeScanner = ({ onScan, onClose }) => {
             Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, context, { color: 'red', lineWidth: 3 });
           }
         }
+      });
+
+      Quagga.onStarted(() => {
+        console.log('Escáner iniciado correctamente');
+        setDebugInfo('Escáner activo - Buscando códigos...');
       });
 
       // Iniciar el escáner
@@ -136,6 +186,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
 
   const handleRetry = () => {
     setError(null);
+    setDebugInfo('');
     handleStartScan();
   };
 
@@ -243,6 +294,21 @@ const BarcodeScanner = ({ onScan, onClose }) => {
               )}
             </div>
             
+            {/* Información de debug */}
+            {debugInfo && (
+              <div style={{
+                background: '#dbeafe',
+                border: '1px solid #93c5fd',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '0.75rem',
+                color: '#1e40af'
+              }}>
+                {debugInfo}
+              </div>
+            )}
+            
             {!error && (
               <div style={{
                 background: '#fef3c7',
@@ -251,13 +317,14 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 marginBottom: '1.5rem'
               }}>
                 <h4 style={{ fontWeight: '600', color: '#92400e', marginBottom: '0.75rem', fontSize: '0.875rem' }}>
-                  💡 Consejos:
+                  💡 Consejos para productos españoles:
                 </h4>
                 <ul style={{ color: '#92400e', fontSize: '0.75rem', textAlign: 'left', lineHeight: '1.4' }}>
+                  <li>• Los códigos españoles suelen empezar con "84"</li>
                   <li>• Mantén el código estable y bien iluminado</li>
                   <li>• Distancia recomendada: 10-20 cm</li>
-                  <li>• El escáner se activará automáticamente</li>
                   <li>• Asegúrate de que el código esté completo</li>
+                  <li>• Mueve lentamente si no detecta</li>
                 </ul>
               </div>
             )}
