@@ -3,6 +3,7 @@ import BarcodeScanner from './components/BarcodeScanner';
 import ProductResults from './components/ProductResults';
 import { getProductInfo } from './services/openFoodFactsService';
 import { getNutritionalAnalysis } from './services/openAIService';
+import logo from './assets/logo.png';
 
 function App() {
   const [ean, setEan] = useState('');
@@ -65,188 +66,112 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-      {/* Header con diseño mejorado */}
-      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 shadow-lg">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <div className="flex justify-center items-center mb-4">
-              <div className="bg-white rounded-full p-4 shadow-lg mr-4">
-                <span className="text-4xl">🥗</span>
-              </div>
-              <div>
-                <h1 className="text-5xl font-bold text-white mb-2">
-                  NutriScan
-                </h1>
-                <p className="text-green-100 text-lg">
-                  Tu compañero inteligente para una alimentación saludable
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+      {/* Background decorative icons */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 text-amber-200 text-8xl opacity-20">🥗</div>
+        <div className="absolute top-40 right-20 text-orange-200 text-6xl opacity-20">🍎</div>
+        <div className="absolute bottom-40 left-20 text-red-200 text-7xl opacity-20">🥑</div>
+        <div className="absolute bottom-20 right-10 text-amber-200 text-6xl opacity-20">🥦</div>
+        <div className="absolute top-1/2 left-1/4 text-orange-200 text-5xl opacity-20">🥕</div>
+        <div className="absolute top-1/3 right-1/3 text-red-200 text-6xl opacity-20">🍅</div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Tarjeta principal con diseño atractivo */}
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-green-100">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">
-                Descubre el poder de la nutrición
-              </h2>
-              <p className="text-gray-600 text-lg">
-                Escanea cualquier producto y obtén información nutricional detallada
-              </p>
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
+          {/* Logo and App Name */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 p-2 shadow-lg">
+              <img 
+                src={logo} 
+                alt="NutriScan Logo" 
+                className="w-full h-full object-cover rounded-full"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'block';
+                }}
+              />
+              <div className="w-full h-full bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white text-2xl font-bold" style={{display: 'none'}}>
+                NS
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              NutriScan
+            </h1>
+            <p className="text-gray-600 text-sm">
+              Donde haya nutrición, hay salud
+            </p>
+          </div>
+
+          {/* Main Action Buttons */}
+          <div className="space-y-4 mb-8">
+            <button
+              onClick={() => setShowScanner(true)}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white py-4 px-6 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+            >
+              <span className="mr-2">📷</span>
+              Escanear código de barras
+            </button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">o</span>
+              </div>
             </div>
 
-            {/* Formulario mejorado */}
-            <form onSubmit={handleManualSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="ean" className="block text-sm font-semibold text-gray-700 mb-3">
-                  <span className="text-green-600 mr-2">📊</span>
-                  Código de Barras (EAN)
-                </label>
-                <div className="flex space-x-3">
-                  <input
-                    type="text"
-                    id="ean"
-                    value={ean}
-                    onChange={(e) => setEan(e.target.value)}
-                    placeholder="Ej: 3017620422003"
-                    className="flex-1 px-6 py-4 border-2 border-green-200 rounded-xl focus:ring-4 focus:ring-green-200 focus:border-green-500 text-lg transition-all duration-200"
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Analizando...
-                      </>
-                    ) : (
-                      <>
-                        <span className="mr-2">🔍</span>
-                        Buscar
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="flex items-center justify-center">
-                  <div className="flex-1 h-px bg-gray-300"></div>
-                  <span className="px-4 text-gray-500 font-medium">o</span>
-                  <div className="flex-1 h-px bg-gray-300"></div>
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setShowScanner(true)}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:from-blue-600 hover:to-cyan-600 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center mx-auto"
-                >
-                  <span className="mr-2">📷</span>
-                  Escanear con Cámara
-                </button>
-              </div>
+            <form onSubmit={handleManualSubmit} className="space-y-4">
+              <input
+                type="text"
+                value={ean}
+                onChange={(e) => setEan(e.target.value)}
+                placeholder="Introduce código EAN manualmente"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-amber-400 focus:outline-none transition-colors duration-200"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Analizando...' : 'Buscar producto'}
+              </button>
             </form>
           </div>
 
-          {/* Resultados */}
+          {/* How it works section */}
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-semibold text-amber-700 mb-4 text-center">
+              ¿Cómo funciona?
+            </h3>
+            <div className="space-y-3 text-sm text-gray-600">
+              <div className="flex items-start">
+                <span className="bg-amber-100 text-amber-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                <p>Haz clic en <strong>Escanear código de barras</strong> para usar la cámara o introduce el código manualmente.</p>
+              </div>
+              <div className="flex items-start">
+                <span className="bg-amber-100 text-amber-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                <p>La app obtendrá información nutricional detallada usando <strong>OpenFoodFacts</strong> (servicio gratuito).</p>
+              </div>
+              <div className="flex items-start">
+                <span className="bg-amber-100 text-amber-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                <p>Recibe análisis personalizado con <strong>IA nutricional</strong> y consejos saludables.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Results */}
           <ProductResults 
             product={product}
             analysis={analysis}
             loading={loading}
             error={error}
           />
-
-          {/* Información adicional con diseño mejorado */}
-          {!product && !loading && !error && (
-            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-8 mt-8">
-              <div className="text-center">
-                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">💡</span>
-                </div>
-                <h3 className="text-2xl font-bold text-blue-800 mb-4">
-                  ¿Cómo funciona NutriScan?
-                </h3>
-                <div className="grid md:grid-cols-2 gap-6 text-left">
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <div className="bg-green-100 rounded-full p-2 mr-3 mt-1">
-                        <span className="text-green-600">📱</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">Escaneo Inteligente</h4>
-                        <p className="text-gray-600">Usa tu cámara para escanear códigos de barras automáticamente</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="bg-blue-100 rounded-full p-2 mr-3 mt-1">
-                        <span className="text-blue-600">🔍</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">Búsqueda Manual</h4>
-                        <p className="text-gray-600">Introduce códigos EAN manualmente para obtener información</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <div className="bg-purple-100 rounded-full p-2 mr-3 mt-1">
-                        <span className="text-purple-600">📊</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">Análisis Detallado</h4>
-                        <p className="text-gray-600">Obtén nutrientes, Nutri-Score y Eco-Score del producto</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="bg-orange-100 rounded-full p-2 mr-3 mt-1">
-                        <span className="text-orange-600">🤖</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">IA Nutricional</h4>
-                        <p className="text-gray-600">Recibe consejos personalizados de un nutricionista virtual</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Footer con información adicional */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mt-8 border border-green-100">
-            <div className="text-center">
-              <div className="flex justify-center space-x-6 mb-4">
-                <div className="flex items-center text-green-600">
-                  <span className="text-2xl mr-2">🌱</span>
-                  <span className="font-semibold">Saludable</span>
-                </div>
-                <div className="flex items-center text-blue-600">
-                  <span className="text-2xl mr-2">⚡</span>
-                  <span className="font-semibold">Rápido</span>
-                </div>
-                <div className="flex items-center text-purple-600">
-                  <span className="text-2xl mr-2">🔒</span>
-                  <span className="font-semibold">Seguro</span>
-                </div>
-              </div>
-              <p className="text-gray-600">
-                NutriScan te ayuda a tomar decisiones alimentarias más informadas y saludables
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Modal del escáner */}
+      {/* Scanner Modal */}
       {showScanner && (
         <BarcodeScanner 
           onScan={handleScan}
